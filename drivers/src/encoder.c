@@ -10,7 +10,7 @@
 #include <nrfx_gpiote.h>
 #include <nrfx_timer.h>
 
-LOG_MODULE_REGISTER(encoder_counter, CONFIG_BM_LOG_LEVEL);
+// LOG_MODULE_REGISTER(encoder_counter, CONFIG_LOG_LEVEL);
 
 #if DT_HAS_COMPAT_STATUS_OKAY(DT_DRV_COMPAT)
 
@@ -44,55 +44,60 @@ static int encoder_init(const struct device* dev)
 {
     const struct encoder_config* config     = dev->config;
     nrfx_timer_t                 timer_inst = config->timer_inst;
-    uint32_t                     pin        = config->gpio_spec.pin;
+    nrfx_gpiote_pin_t            pin        = config->gpio_spec.pin;
 
-    uint32_t err;
+    const struct gpio_dt_spec    pin_spec   =
+    {
+        .pin = config->gpio_spec.pin,
+    };
 
-    // initializing a GPIOTE input pin.
-    nrfx_gpiote_in_config_t gpiote_cfg = NRFX_GPIOTE_CONFIG_IN_SENSE_TOGGLE(true);
+    gpio_pin_configure_dt(&pin_spec, GPIO_INPUT);
 
-    err = nrfx_gpiote_in_init(pin, &gpiote_cfg, NULL);
-    if (err != NRFX_SUCCESS) {
-        LOG_ERR("nrfx_gpiote_in_init failed");
-        return err;
-    }
+    // allocate available channel
+    uint8_t gpiote_chan;
+    nrfx_gpiote_channel_alloc(&gpiote_chan);
 
-    // Function for enabling trigger for the given pin for PPI
+
+    // const uint8_t * const gppi_ch;
+	static const nrfx_gpiote_trigger_config_t trigger_cfg = {
+		.trigger = NRFX_GPIOTE_TRIGGER_TOGGLE,
+	};
+
+	static const nrfx_gpiote_input_config_t input_config = {
+		.pull = NRF_GPIO_PIN_NOPULL,
+	};
+
+    nrfx_err_t res = nrfx_gpiote_input_configure(pin, &input_config, &trigger_cfg, NULL);
+
+    // GPIOTE EVENT trigger for ppi. false - no irq
     nrfx_gpiote_trigger_enable(pin, false);
 
     // Initialize the timer in counter mode
-    nrfx_timer_config_t timer_cfg = NRFX_TIMER_DEFAULT_CONFIG;
+    nrfx_timer_config_t timer_cfg = NRFX_TIMER_DEFAULT_CONFIG(NRF_TIMER_FREQ_16MHz);
     timer_cfg.mode                = NRF_TIMER_MODE_COUNTER;
-    err                           = nrfx_timer_init(&timer_inst, &timer_cfg, NULL);
-    if (err != NRFX_SUCCESS) {
-        LOG_ERR("nrfx_gpiote_in_init failed");
-        return err;
+    res                           = nrfx_timer_init(&timer_inst, &timer_cfg, NULL);
+    if (res != NRFX_SUCCESS) {
+        LOG_ERR("nrfx_timer_init failed");
+        return res;
     }
 
-    // Set up a PPI channel to connect the GPIOTE event to the timer COUNT task
-    uint8_t gppi_ch;
-    err = nrfx_gppi_channel_alloc(&gppi_ch);
-    if (err != NRFX_SUCCESS) {
-        LOG_ERR("nrfx_gpiote_in_init failed");
-        return err;
+    // connect gpiote event to timer task through channel
+    res = nrfx_ppi_channel_assign(gpiote_chan, nrfx_gpiote_in_event_address_get(pin),  nrfx_timer_task_address_get(&timer_inst, NRF_TIMER_TASK_COUNT));
+    if (res != NRFX_SUCCESS) {
+        LOG_ERR("nrfx_ppi_channel_assign failed");
+        return res;
     }
 
-    // setup PPI from event GPIO EVENT(pin) to task TIMER TASK_COUNT
-    nrfx_gppi_channel_endpoints_setup(gppi_ch, nrfx_gpiote_in_event_addr_get(pin), nrfx_timer_task_address_get(&timer_inst, NRF_TIMER_TASK_COUNT));
-
-    // enable the allocated ppi channel and timer
-    nrfx_gppi_channels_enable(BIT(gppi_ch));
     nrfx_timer_enable(&timer_inst);
 
-    LOG_INF("%s ready", dev->name);
     return 0;
 }
 
 #define ENCODER_DEFINE(i)                                                                                           \
     static const struct encoder_config encoder_config_##i = {                                                       \
         .timer_inst = {                                                                                             \
-            .p_reg            = (NRF_TIMER_Type*)DT_PROP(DT_INST(i, encoder_counter), timer_address),         \
-            .instance_id      = DT_PROP(DT_INST(i, encoder_counter), timer_id),                               \
+            .p_reg            = (NRF_TIMER_Type*)DT_PROP(DT_INST(i, encoder_counter), timer_address),               \
+            .instance_id      = DT_PROP(DT_INST(i, encoder_counter), timer_id),                                     \
             .cc_channel_count = 4,                                                                                  \
         },                                                                                                          \
         .gpio_spec = GPIO_DT_SPEC_INST_GET_OR(i, gpios, { 0 }),                                                     \

@@ -1,4 +1,4 @@
-description: BM_ENCODER parent node
+description: ENCODER counter parent node
 
 compatible: "encoder_counter"
 
