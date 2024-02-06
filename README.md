@@ -1,4 +1,4 @@
 # zephyr_encoder_driver
-HW oriented encoder driver on nrf52
+Incremental encoder driver on using GPIOTE - PPI - TIMER counter.
 
-# nRF Connect SDK version v2.3.0
+# Toolchain and SDK version v2.5.0
