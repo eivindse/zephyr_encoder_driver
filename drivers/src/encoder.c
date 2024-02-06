@@ -4,13 +4,11 @@
 #include <zephyr/devicetree.h>
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/drivers/sensor.h>
-#include <zephyr/logging/log.h>
 
 #include <helpers/nrfx_gppi.h>
 #include <nrfx_gpiote.h>
 #include <nrfx_timer.h>
 
-// LOG_MODULE_REGISTER(encoder_counter, CONFIG_LOG_LEVEL);
 
 #if DT_HAS_COMPAT_STATUS_OKAY(DT_DRV_COMPAT)
 
@@ -77,14 +75,12 @@ static int encoder_init(const struct device* dev)
     timer_cfg.mode                = NRF_TIMER_MODE_COUNTER;
     res                           = nrfx_timer_init(&timer_inst, &timer_cfg, NULL);
     if (res != NRFX_SUCCESS) {
-        LOG_ERR("nrfx_timer_init failed");
         return res;
     }
 
     // connect gpiote event to timer task through channel
     res = nrfx_ppi_channel_assign(gpiote_chan, nrfx_gpiote_in_event_address_get(pin),  nrfx_timer_task_address_get(&timer_inst, NRF_TIMER_TASK_COUNT));
     if (res != NRFX_SUCCESS) {
-        LOG_ERR("nrfx_ppi_channel_assign failed");
         return res;
     }
 
