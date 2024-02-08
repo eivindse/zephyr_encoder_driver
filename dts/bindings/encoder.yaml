@@ -10,16 +10,6 @@ properties:
       required: true
       description: GPIO pin
 
-    timer_id:
-      type: int
-      required: true
-      description: TIMER instance id
-
-    timer_address:
-      type: int
-      required: true
-      description: TIMER instance address
-
     label:
       type: string
       description: Descriptive name of the key

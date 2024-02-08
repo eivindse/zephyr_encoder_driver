@@ -1,0 +1,13 @@
+config ENCODER0_TIMER
+	int "HW timer used by 1st encoder"
+	default 1
+	help
+	  Timer used by encoder1.
+
+config ENCODER1_TIMER
+	int "HW timer used by 2nd encoder"
+	default 2
+	help
+	  Timer used by encoder2.
+
+source "Kconfig.zephyr"
