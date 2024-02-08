@@ -9,17 +9,16 @@
 	encoder_left: encoder_left {
 		compatible = "encoder_counter";
 		status = "okay";
-		gpios = <&gpio0 28 GPIO_ACTIVE_LOW>;
-		timer_address = < 0x40009000 >;
-		timer_id = < 1 >;
+		gpios = <&gpio0 26 GPIO_ACTIVE_LOW>;
 	};
 
 	encoder_right: encoder_right {
 		compatible = "encoder_counter";
 		status = "okay";
-		gpios = <&gpio0 29 GPIO_ACTIVE_LOW>;
-		timer_address = < 0x4000a000 >;
-		timer_id = < 2 >;
+		gpios = <&gpio0 27 GPIO_ACTIVE_LOW>;
 	};
+};
 
+&i2c0 {
+	status = "disabled";
 };
