@@ -4,11 +4,12 @@ name: CI
 
 on:
   push:
-    branches:
-      - 'main'
+    branches: [master, main]
+  pull_request: 
+    branches: [master, main]
 
 jobs:
-  approved:
+  check_building_errors:
     runs-on: ubuntu-latest
     
     steps:
