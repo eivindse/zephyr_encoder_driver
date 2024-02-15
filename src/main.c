@@ -50,5 +50,7 @@ int main(void)
         k_msleep(1000); // Update heading at least every time we get gyro measurments which is 12.5 Hz.
     }
 
+adding stuff to break compilation
+
     return 0;
 }
