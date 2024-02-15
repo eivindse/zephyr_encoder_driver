@@ -1,0 +1,26 @@
+# Compile on push to enable continous integration(CI)
+
+name: CI
+
+on:
+  push:
+    branches:
+      - 'main'
+
+jobs:
+  approved:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout # Checks out the code in our repository to the current runner, in order to access the code (and later build it).
+        uses: actions/checkout@v3
+        with:
+          submodules: 'true'
+
+      - name: Build application code
+        run: |
+          docker run \
+            -v ${PWD}:/workdir/project \
+            -w /workdir/project \
+            nordicplayground/nrfconnect-sdk:v2.5-branch \
+            west build -b nrf52840dk_nrf52840 --build-dir /workdir/project/build
